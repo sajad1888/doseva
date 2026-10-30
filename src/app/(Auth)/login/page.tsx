@@ -56,44 +56,10 @@ function Logo() {
           <stop offset="0.42" stopColor="#1583db" />
         </linearGradient>
       </defs>
-      <rect
-        x="-35"
-        y="-14"
-        width="70"
-        height="28"
-        rx="14"
-        fill="#1583db"
-        transform="translate(62 82) rotate(45)"
-      />
-      <rect
-        x="-35"
-        y="-14"
-        width="70"
-        height="28"
-        rx="14"
-        fill="url(#capsule-light)"
-        transform="translate(62 38) rotate(-45)"
-      />
-      <rect
-        x="-22"
-        y="-8"
-        width="38"
-        height="3.5"
-        rx="1.75"
-        fill="#fff"
-        opacity=".55"
-        transform="translate(64 38) rotate(-45)"
-      />
-      <rect
-        x="-14"
-        y="-8"
-        width="38"
-        height="3.5"
-        rx="1.75"
-        fill="#fff"
-        opacity=".55"
-        transform="translate(60 82) rotate(45)"
-      />
+      <rect x="-35" y="-14" width="70" height="28" rx="14" fill="#1583db" transform="translate(62 82) rotate(45)" />
+      <rect x="-35" y="-14" width="70" height="28" rx="14" fill="url(#capsule-light)" transform="translate(62 38) rotate(-45)" />
+      <rect x="-22" y="-8" width="38" height="3.5" rx="1.75" fill="#fff" opacity=".55" transform="translate(64 38) rotate(-45)" />
+      <rect x="-14" y="-8" width="38" height="3.5" rx="1.75" fill="#fff" opacity=".55" transform="translate(60 82) rotate(45)" />
     </svg>
   );
 }
@@ -103,6 +69,7 @@ export default function LoginPage() {
   const [method, setMethod] = useState<Method>("phone");
   const [value, setValue] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const current = METHODS[method];
 
@@ -112,14 +79,33 @@ export default function LoginPage() {
     setError("");
   }
 
-  function onSubmit(e: FormEvent) {
+  async function onSubmit(e: FormEvent) {
     e.preventDefault();
+    if (loading) return;
     if (!current.isValid(value)) {
       setError(current.error);
       return;
     }
     const identifier = toLatinDigits(value).replace(/\s/g, "");
-    router.push(`/verify?${method}=${encodeURIComponent(identifier)}`);
+
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/otp/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: method, value: identifier }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        setError(data?.error?.message ?? "مشکلی پیش آمد. دوباره تلاش کنید.");
+        return;
+      }
+      router.push(`/verify?${method}=${encodeURIComponent(identifier)}`);
+    } catch {
+      setError("اتصال برقرار نشد. اینترنت خود را بررسی کنید.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -133,18 +119,9 @@ export default function LoginPage() {
           <Link
             href="/"
             aria-label="بازگشت"
-            className="grid h-10 w-10 place-items-center rounded-full text-[#0b2a5b] transition hover:bg-[#0b2a5b]/5  focus-visible:outline-2 focus-visible:outline-[#1583db]"
+            className="grid h-10 w-10 place-items-center rounded-full text-[#0b2a5b] transition hover:bg-[#0b2a5b]/5 focus-visible:outline-2 focus-visible:outline-[#1583db]"
           >
-            <svg
-              viewBox="0 0 24 24"
-              className="h-6 w-6"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
+            <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <polyline points="15 6 9 12 15 18" />
             </svg>
           </Link>
@@ -158,11 +135,7 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <form
-          onSubmit={onSubmit}
-          noValidate
-          className="mt-16 flex flex-1 flex-col"
-        >
+        <form onSubmit={onSubmit} noValidate className="mt-16 flex flex-1 flex-col">
           <div
             role="tablist"
             aria-label="روش ورود"
@@ -187,10 +160,7 @@ export default function LoginPage() {
             })}
           </div>
 
-          <label
-            htmlFor="identifier"
-            className="mb-3 mt-10 block text-lg font-bold"
-          >
+          <label htmlFor="identifier" className="mb-3 mt-10 block text-lg font-bold">
             {current.label}
           </label>
           <input
@@ -212,27 +182,21 @@ export default function LoginPage() {
             }`}
           />
           {error && (
-            <p
-              id="identifier-error"
-              role="alert"
-              className="mt-2 text-sm text-red-500"
-            >
+            <p id="identifier-error" role="alert" className="mt-2 text-sm text-red-500">
               {error}
             </p>
           )}
 
           <button
             type="submit"
-            className="mt-auto h-13 w-full rounded-full bg-[#1583db] text-lg font-bold text-white transition hover:bg-[#1175c4] active:scale-[0.98]  focus-visible:outline-[3px] focus-visible:outline-offset-[3px] focus-visible:outline-[#0b2a5b]"
+            disabled={loading}
+            className="mt-auto disabled:opacity-60 h-13 w-full rounded-full bg-[#1583db] text-lg font-bold text-white transition hover:bg-[#1175c4] active:scale-[0.98]  focus-visible:outline-[3px] focus-visible:outline-offset-[3px] focus-visible:outline-[#0b2a5b]"
           >
-            ادامه
+            {loading ? "در حال ارسال…" : "ادامه"}
           </button>
         </form>
 
-        <Link
-          href="/terms"
-          className="mt-12 text-center text-[15px] text-[#1583db]"
-        >
+        <Link href="/terms" className="mt-12 text-center text-[15px] text-[#1583db]">
           حریم خصوصی و شرایط استفاده
         </Link>
       </div>
