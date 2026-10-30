@@ -1,1 +1,14 @@
 @import "tailwindcss";
+
+@theme {
+    --animate-doseva-float: doseva-float 5s infinite ease-in-out;
+}
+@keyframes doseva-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(6deg);
+  }
+}
