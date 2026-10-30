@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     id: "/",
     name: "دوزوا | همراه سلامت شما",
-    short_name: "دوزوا",
+    short_name: "Doseva",
     description: "یادآوری دارو، نوبت پزشکی و مدیریت سلامت",
     start_url: "/",
     scope: "/",
