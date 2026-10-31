@@ -4,6 +4,11 @@ const TZ = "Asia/Tehran";
 export const toFa = (s: string | number) =>
   String(s).replace(/\d/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[Number(d)]);
 
+export const toLatinDigits = (s: string) =>
+  s
+    .replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 1776))
+    .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 1632));
+
 export function tehranParts(d: Date = new Date()) {
   const parts = new Intl.DateTimeFormat("en-GB", {
     timeZone: TZ,
@@ -42,4 +47,22 @@ export function formatJalaliHeader(d: Date = new Date()) {
   }).formatToParts(d);
   const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "";
   return get("weekday") + "، " + get("day") + " " + get("month") + " " + get("year");
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+export const addDaysIso = (iso: string, n: number) =>
+  new Date(Date.parse(iso + "T00:00:00Z") + n * DAY_MS).toISOString().slice(0, 10);
+
+export const daysBetween = (fromIso: string, toIso: string) =>
+  Math.round((Date.parse(toIso + "T00:00:00Z") - Date.parse(fromIso + "T00:00:00Z")) / DAY_MS);
+
+/** آیا این دارو در تاریخ داده‌شده نوبت مصرف دارد؟ */
+export function isDueOn(
+  m: { startDate: string; endDate: string | null; intervalDays: number },
+  dateKey: string
+) {
+  if (m.startDate > dateKey) return false;
+  if (m.endDate && m.endDate < dateKey) return false;
+  return daysBetween(m.startDate, dateKey) % m.intervalDays === 0;
 }

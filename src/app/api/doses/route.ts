@@ -4,7 +4,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { fail, isSameOrigin } from "@/lib/http";
 import { getSessionUserId } from "@/lib/auth/session";
-import { tehranParts } from "@/lib/time";
+import { isDueOn, tehranParts } from "@/lib/time";
 
 const bodySchema = z.object({
   medicineId: z.string().min(1).max(40),
@@ -25,13 +25,12 @@ export async function POST(req: Request) {
   // فقط داروی خود کاربر؛ تاریخ را سرور تعیین می‌کند نه کلاینت
   const med = await prisma.medicine.findFirst({
     where: { id: medicineId, userId, active: true },
-    select: { id: true, times: true, pillsPerDose: true },
+    select: { id: true, times: true, pillsPerDose: true, startDate: true, endDate: true, intervalDays: true },
   });
-  if (!med || !med.times.includes(time)) {
+  const { dateKey } = tehranParts();
+  if (!med || !med.times.includes(time) || !isDueOn(med, dateKey)) {
     return fail(404, "NOT_FOUND", "این نوبت مصرف پیدا نشد.");
   }
-
-  const { dateKey } = tehranParts();
 
   try {
     await prisma.$transaction([

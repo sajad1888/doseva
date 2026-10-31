@@ -14,6 +14,15 @@ enum Role {
   CAREGIVER
 }
 
+enum MedicineForm {
+  TABLET
+  CAPSULE
+  SYRUP
+  DROP
+  INJECTION
+  SACHET
+}
+
 enum DoseStatus {
   TAKEN
   SKIPPED
@@ -48,22 +57,27 @@ model OtpCode {
 }
 
 model Medicine {
-  id                String    @id @default(cuid())
+  id                String       @id @default(cuid())
   userId            String
-  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  memberId          String? // null = برای خود کاربر؛ وگرنه برای عضو خانواده
+  member            FamilyMember? @relation(fields: [memberId], references: [id], onDelete: Cascade)
   name              String
-  dosage            String // مثل «۱۰۰۰ واحد»
-  pillsPerDose      Int       @default(1)
+  dosage            String // مثل «۲۰ میلی‌گرم»؛ می‌تواند خالی باشد
+  form              MedicineForm @default(TABLET)
+  pillsPerDose      Int          @default(1)
+  intervalDays      Int          @default(1) // 1 = هر روز، 2 = یک روز در میان، 7 = هفتگی
   times             String[] // ساعت‌های مصرف به وقت تهران، مثل ["08:00","20:00"]
-  stock             Int       @default(0)
-  lowStockThreshold Int       @default(5)
-  startDate         String // YYYY-MM-DD (تهران)
+  stock             Int? // null = موجودی نامشخص
+  lowStockThreshold Int          @default(5)
+  startDate         String // YYYY-MM-DD (میلادی، تهران)
   endDate           String?
-  active            Boolean   @default(true)
-  createdAt         DateTime  @default(now())
+  active            Boolean      @default(true)
+  createdAt         DateTime     @default(now())
   logs              DoseLog[]
 
   @@index([userId, active])
+  @@index([memberId])
 }
 
 model DoseLog {
@@ -101,6 +115,7 @@ model FamilyMember {
   name      String
   relation  String?
   createdAt DateTime @default(now())
+  medicines Medicine[]
 
   @@index([ownerId])
 }

@@ -117,7 +117,7 @@ export default function TodayPanel({ initialDoses }: { initialDoses: DoseItem[] 
             </div>
             <div className="text-left">
               <p className="text-lg font-extrabold">{toFa(next.time)}</p>
-              <p className="mt-1 text-xs text-[#5b6f8f]">{toFa(next.pills)} قرص</p>
+              <p className="mt-1 text-xs text-[#5b6f8f]">{toFa(next.pills)} {next.unit}</p>
             </div>
           </div>
 
@@ -145,7 +145,16 @@ export default function TodayPanel({ initialDoses }: { initialDoses: DoseItem[] 
         </section>
       ) : (
         <section className="mt-3 rounded-3xl bg-white p-5 text-center text-sm leading-7 text-[#5b6f8f] shadow-[0_1px_0_#e6eef9]">
-          {total ? "نوبت مصرف دیگری برای امروز نمانده است." : "هنوز دارویی اضافه نکرده‌اید."}
+          {total ? (
+            "نوبت مصرف دیگری برای امروز نمانده است."
+          ) : (
+            <>
+              برای امروز دارویی نداری.{" "}
+              <Link href="/medicines/new" className="font-semibold text-[#1583db]">
+                افزودن دارو
+              </Link>
+            </>
+          )}
         </section>
       )}
     </>

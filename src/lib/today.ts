@@ -1,15 +1,17 @@
 import { cache } from "react";
 import { prisma } from "./prisma";
-import { tehranDayRange, tehranParts, toFa } from "./time";
+import { FORM_INFO } from "./medicine";
+import { isDueOn, tehranDayRange, tehranParts, toFa } from "./time";
 
 export type DoseItem = {
   key: string; // medicineId|HH:mm
   medicineId: string;
   name: string;
   dosage: string;
-  subtitle: string; // «۱۰۰۰ واحد • روزی یکبار»
+  subtitle: string; // «۲۰ میلی‌گرم • روزی یکبار»
   time: string; // HH:mm
   pills: number;
+  unit: string; // قرص، کپسول، ...
   status: "PENDING" | "TAKEN" | "SKIPPED";
 };
 
@@ -19,9 +21,12 @@ export const getActiveMedicines = cache(async (userId: string) =>
     where: { userId, active: true },
     select: {
       id: true,
+      memberId: true,
       name: true,
       dosage: true,
+      form: true,
       pillsPerDose: true,
+      intervalDays: true,
       times: true,
       stock: true,
       lowStockThreshold: true,
@@ -31,11 +36,15 @@ export const getActiveMedicines = cache(async (userId: string) =>
   })
 );
 
-function frequencyLabel(n: number) {
+function frequencyLabel(timesPerDay: number, interval: number) {
+  if (interval === 2) return "یک روز در میان";
+  if (interval === 7) return "هفته‌ای یکبار";
+  if (interval > 2) return "هر " + toFa(interval) + " روز";
   const words = ["", "روزی یکبار", "روزی دو بار", "روزی سه بار"];
-  return words[n] ?? "روزی " + toFa(n) + " بار";
+  return words[timesPerDay] ?? "روزی " + toFa(timesPerDay) + " بار";
 }
 
+/** نوبت‌های امروزِ خود کاربر (داروهای اعضای خانواده جدا هستند) */
 export async function getTodayDoses(userId: string): Promise<DoseItem[]> {
   const { dateKey } = tehranParts();
 
@@ -51,7 +60,7 @@ export async function getTodayDoses(userId: string): Promise<DoseItem[]> {
   const items: DoseItem[] = [];
 
   for (const m of meds) {
-    if (m.startDate > dateKey || (m.endDate && m.endDate < dateKey)) continue;
+    if (m.memberId !== null || !isDueOn(m, dateKey)) continue;
     for (const time of m.times) {
       const key = m.id + "|" + time;
       items.push({
@@ -59,9 +68,12 @@ export async function getTodayDoses(userId: string): Promise<DoseItem[]> {
         medicineId: m.id,
         name: m.name,
         dosage: m.dosage,
-        subtitle: m.dosage + " • " + frequencyLabel(m.times.length),
+        subtitle: [m.dosage, frequencyLabel(m.times.length, m.intervalDays)]
+          .filter(Boolean)
+          .join(" • "),
         time,
         pills: m.pillsPerDose,
+        unit: FORM_INFO[m.form].unit,
         status: done.get(key) ?? "PENDING",
       });
     }
@@ -71,7 +83,7 @@ export async function getTodayDoses(userId: string): Promise<DoseItem[]> {
 
 export async function getLowStockCount(userId: string) {
   const meds = await getActiveMedicines(userId);
-  return meds.filter((m) => m.stock <= m.lowStockThreshold).length;
+  return meds.filter((m) => m.stock !== null && m.stock <= m.lowStockThreshold).length;
 }
 
 export const getFamilyCount = (userId: string) =>
