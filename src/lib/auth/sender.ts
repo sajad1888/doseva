@@ -3,7 +3,7 @@ import type { IdentifierType } from "./identifier";
 
 /** ارسال کد تأیید. در حالت توسعه فقط در ترمینال چاپ می‌شود. */
 export async function sendOtp(type: IdentifierType, to: string, code: string) {
-  if (process.env.NODE_ENV !== "production") {
+  if (process.env.NODE_ENV !== "production" || process.env.OTP_LOG === "true") {
     console.log(`[OTP] ${to} → ${code}`);
     return;
   }
