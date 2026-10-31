@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
@@ -14,17 +14,25 @@ enum Role {
   CAREGIVER
 }
 
+enum DoseStatus {
+  TAKEN
+  SKIPPED
+}
+
 model User {
-  id             String    @id @default(cuid())
-  phone          String?   @unique
-  email          String?   @unique
+  id             String         @id @default(cuid())
+  phone          String?        @unique
+  email          String?        @unique
   role           Role?
   fullName       String?
   birthDate      String? // شمسی، مثل 1370/01/01
-  companionPhone String? // شماره همراه (اختیاری)
-  onboardedAt    DateTime? // وقتی نقش و اطلاعات کامل شد
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  companionPhone String?
+  onboardedAt    DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  medicines      Medicine[]
+  appointments   Appointment[]
+  family         FamilyMember[]
 }
 
 model OtpCode {
@@ -37,4 +45,62 @@ model OtpCode {
   createdAt  DateTime  @default(now())
 
   @@index([identifier, createdAt])
+}
+
+model Medicine {
+  id                String    @id @default(cuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name              String
+  dosage            String // مثل «۱۰۰۰ واحد»
+  pillsPerDose      Int       @default(1)
+  times             String[] // ساعت‌های مصرف به وقت تهران، مثل ["08:00","20:00"]
+  stock             Int       @default(0)
+  lowStockThreshold Int       @default(5)
+  startDate         String // YYYY-MM-DD (تهران)
+  endDate           String?
+  active            Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  logs              DoseLog[]
+
+  @@index([userId, active])
+}
+
+model DoseLog {
+  id         String     @id @default(cuid())
+  medicineId String
+  medicine   Medicine   @relation(fields: [medicineId], references: [id], onDelete: Cascade)
+  userId     String
+  date       String // YYYY-MM-DD (تهران)
+  time       String // HH:mm
+  status     DoseStatus @default(TAKEN)
+  takenAt    DateTime   @default(now())
+
+  // هر نوبت در هر روز فقط یک‌بار ثبت می‌شود
+  @@unique([medicineId, date, time])
+  @@index([userId, date])
+}
+
+model Appointment {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  doctorName String
+  specialty  String?
+  clinic     String?
+  at         DateTime
+  createdAt  DateTime @default(now())
+
+  @@index([userId, at])
+}
+
+model FamilyMember {
+  id        String   @id @default(cuid())
+  ownerId   String
+  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name      String
+  relation  String?
+  createdAt DateTime @default(now())
+
+  @@index([ownerId])
 }
