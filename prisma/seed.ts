@@ -19,28 +19,32 @@ async function main() {
   await prisma.familyMember.deleteMany({ where: { ownerId: user.id } });
 
   const metformin = await prisma.medicine.create({
-    data: {
-      userId: user.id,
-      name: "متفورمین ۵۰۰",
-      dosage: "۵۰۰ میلی‌گرم",
-      times: ["08:00", "20:00"],
-      stock: 40,
-      startDate: dateKey,
-    },
+    data: { userId: user.id, name: "متفورمین", dosage: "۵۰۰ میلی‌گرم", times: ["08:00"], stock: 40, startDate: dateKey },
   });
   await prisma.medicine.create({
-    data: {
-      userId: user.id,
-      name: "ویتامین دی۳",
-      dosage: "۱۰۰۰ واحد",
-      times: ["10:00"],
-      stock: 3, // رو به اتمام
-      lowStockThreshold: 5,
-      startDate: dateKey,
-    },
+    data: { userId: user.id, name: "ویتامین دی۳", dosage: "۱۰۰۰ واحد", times: ["10:00"], stock: 3, lowStockThreshold: 5, startDate: dateKey },
+  });
+  await prisma.medicine.create({
+    data: { userId: user.id, name: "لوزارتان", dosage: "۲۵ میلی‌گرم", times: ["20:00"], stock: 30, startDate: dateKey },
   });
   await prisma.doseLog.create({
-    data: { medicineId: metformin.id, userId: user.id, date: dateKey, time: "08:00", status: "TAKEN" },
+    data: {
+      medicineId: metformin.id,
+      userId: user.id,
+      date: dateKey,
+      time: "08:00",
+      status: "TAKEN",
+      takenAt: new Date(dateKey + "T08:05:00+03:30"),
+    },
+  });
+
+  const maryam = await prisma.familyMember.create({ data: { ownerId: user.id, name: "مریم", relation: "مادر" } });
+  const hasan = await prisma.familyMember.create({ data: { ownerId: user.id, name: "حسن", relation: "پدر" } });
+  await prisma.medicine.create({
+    data: { userId: user.id, memberId: maryam.id, name: "آملودیپین", dosage: "۵ میلی‌گرم", times: ["09:00"], stock: 20, startDate: dateKey },
+  });
+  await prisma.medicine.create({
+    data: { userId: user.id, memberId: hasan.id, name: "آتورواستاتین", dosage: "۲۰ میلی‌گرم", times: ["22:00"], stock: 25, startDate: dateKey },
   });
 
   await prisma.appointment.create({
@@ -51,12 +55,6 @@ async function main() {
       clinic: "کلینیک بهار",
       at: new Date(dateKey + "T16:30:00+03:30"),
     },
-  });
-  await prisma.familyMember.createMany({
-    data: [
-      { ownerId: user.id, name: "مادر", relation: "مادر" },
-      { ownerId: user.id, name: "پدر", relation: "پدر" },
-    ],
   });
 
   console.log("داده‌ی نمونه برای " + phone + " ساخته شد.");

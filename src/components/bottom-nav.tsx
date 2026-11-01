@@ -12,9 +12,10 @@ const ICON = {
   strokeLinejoin: "round" as const,
 };
 
-const ITEMS: { href: string; label: string; icon: ReactNode }[] = [
+const ITEMS: { href: string; label: string; icon: ReactNode; also?: string[] }[] = [
   {
     href: "/home",
+    also: ["/schedule"],
     label: "خانه",
     icon: (
       <svg viewBox="0 0 24 24" className="h-6 w-6" {...ICON} aria-hidden="true">
@@ -74,7 +75,9 @@ export default function BottomNav() {
     >
       <ul className="mx-auto grid max-w-md grid-cols-5 px-2 py-2">
         {ITEMS.map((item) => {
-          const active = pathname === item.href || pathname.startsWith(item.href + "/");
+          const active = [item.href, ...(item.also ?? [])].some(
+            (p) => pathname === p || pathname.startsWith(p + "/")
+          );
           return (
             <li key={item.href}>
               <Link

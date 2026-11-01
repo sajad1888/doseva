@@ -1,3 +1,5 @@
+import { toFa } from "./time";
+
 export const JALALI_MONTHS = [
   "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور",
   "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند",
@@ -76,4 +78,24 @@ export function isoToJalali(iso: string) {
   const [gy, gm, gd] = iso.split("-").map(Number);
   const [y, m, d] = gregorianToJalali(gy, gm, gd);
   return { y, m, d };
+}
+
+const WEEKDAYS = ["یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه", "شنبه"];
+
+/** نام روز هفته برای یک تاریخ ISO (مثلاً «شنبه») */
+export const weekdayName = (iso: string) => WEEKDAYS[new Date(iso + "T00:00:00Z").getUTCDay()];
+
+/** شماره‌ی روز شمسی، مثل ۲۵ */
+export const jalaliDayNumber = (iso: string) => toFa(isoToJalali(iso).d);
+
+/** مثل: ۲۵ مهر */
+export function jalaliDayMonth(iso: string) {
+  const { m, d } = isoToJalali(iso);
+  return toFa(d) + " " + JALALI_MONTHS[m - 1];
+}
+
+/** مثل: مهر ۱۴۰۵ */
+export function jalaliMonthYear(iso: string) {
+  const { y, m } = isoToJalali(iso);
+  return JALALI_MONTHS[m - 1] + " " + toFa(y);
 }

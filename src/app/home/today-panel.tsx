@@ -102,7 +102,7 @@ export default function TodayPanel({ initialDoses }: { initialDoses: DoseItem[] 
       {/* نوبت بعدی */}
       <div className="mt-6 flex items-center justify-between">
         <h2 className="text-base font-bold">نوبت بعدی مصرف</h2>
-        <Link href="/medicines" className="text-sm text-[#1583db]">
+        <Link href="/schedule" className="text-sm text-[#1583db]">
           برنامه امروز
         </Link>
       </div>
