@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { DoseItem } from "@/lib/today";
 import { toFa } from "@/lib/time";
@@ -13,7 +13,12 @@ export default function TodayPanel({ initialDoses }: { initialDoses: DoseItem[] 
   const [error, setError] = useState("");
 
   // بعد از router.refresh داده‌ی تازه‌ی سرور جایگزین می‌شود
-  useEffect(() => setDoses(initialDoses), [initialDoses]);
+  // (به‌جای useEffect: همگام‌سازی state هنگام رندر، روش پیشنهادی React)
+  const [prevInitial, setPrevInitial] = useState(initialDoses);
+  if (initialDoses !== prevInitial) {
+    setPrevInitial(initialDoses);
+    setDoses(initialDoses);
+  }
 
   const total = doses.length;
   const taken = doses.filter((d) => d.status === "TAKEN").length;
